@@ -3,6 +3,9 @@ var myParser = require("body-parser");
 var promise = require("bluebird");
 var request = require("request");
 var zipcodes = require("zipcodes");
+var axios = require("axios");
+var parseString = require("xml2js").parseString;
+
 const nearbyCities = require("nearby-big-cities");
 
 var options = {
@@ -202,7 +205,9 @@ app.get("/getSolarInstalls", function(req, res, next) {
   const cityName = req.query.cityName;
   //console.log("EMAIL:", req.params.zipcode);
   //const zipcode = req.params.zipcode;
+  console.log("cityName", cityName);
   let zipcodeResult = zipcodes.lookupByName(cityName, "CA");
+  console.log("result", zipcodeResult);
   if (Array.isArray(zipcodeResult)) {
     zipcodeResult = zipcodeResult[0];
   }
@@ -280,6 +285,66 @@ app.get("/topInstallers/:cityName", function(req, res, next) {
       }
     );
   });
+});
+
+app.get("/getPropertySquareFootage", function(req, res, next) {
+  const address = req.query.address; // || "53 W Recreo Ct";
+  const cityzipstate = req.query.city; //|| "Mountain House, CA";
+
+  console.log({ address, cityzipstate });
+  //URL to get the zpid and pass it to another Service
+  const url = `http://www.zillow.com/webservice/GetSearchResults.htm?zws-id=${process
+    .env.ZILLO_API_KEY}&address=${address}&citystatezip=${cityzipstate}`;
+
+  axios
+    .get(url)
+    .then(({ data }) => {
+      return new Promise((resolve, reject) => {
+        parseString(data, function(err, result) {
+          if (err != null) {
+            return reject(err);
+          }
+          let zpid;
+          try {
+            //  console.log(JSON.stringify(result, null, 2));
+            zpid =
+              result["SearchResults:searchresults"].response[0].results[0]
+                .result[0].zpid[0];
+          } catch (err) {
+            return reject("Property not found");
+          }
+
+          resolve(zpid);
+        });
+      });
+    })
+    .then(zpid => {
+      const url = `http://www.zillow.com/webservice/GetDeepComps.htm?zws-id=${process
+        .env.ZILLO_API_KEY}&zpid=${zpid}&count=5`;
+
+      return new Promise((resolve, reject) => {
+        axios.get(url).then(({ data }) => {
+          parseString(data, (err, result) => {
+            if (err) {
+              return reject(err);
+            }
+            const finishedSqFt =
+              result["Comps:comps"].response[0].properties[0].principal[0]
+                .finishedSqFt[0];
+
+            resolve(finishedSqFt);
+          });
+        });
+      });
+    })
+    .then(finishedSqFt => {
+      res.json(finishedSqFt);
+    })
+    .catch(err => {
+      res.status(400).json({
+        error: err
+      });
+    });
 });
 
 app.listen(4000, function() {
