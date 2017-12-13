@@ -1,7 +1,13 @@
 {
+  "config": {
+    "s3BucketName": "powerlife-api-lambda",
+    "region": "us-east-2",
+    "cloudFormationStackName": "AwsServerlessExpressStack",
+    "functionName": "powerlifeapi",
+    "accountId": "365716774684"
+  },
   "dependencies": {
     "aws-serverless-express": "^3.0.2",
-    "axios": "^0.16.2",
     "babel-cli": "^6.24.1",
     "babel-core": "^6.24.1",
     "babel-loader": "^6.4.1",
@@ -17,22 +23,11 @@
     "pg": "^6.1.5",
     "pg-promise": "^5.6.7",
     "webpack": "2.1.0-beta.21",
-    "xml2js": "^0.4.19",
     "zipcodes": "^3.0.0"
-  },
-  "config": {
-    "s3BucketName": "powerlife-api-lambda",
-    "region": "us-east-2",
-    "cloudFormationStackName": "AwsServerlessExpressStack",
-    "functionName": "powerlifeapi",
-    "accountId": "365716774684"
   },
   "scripts": {
     "__LOCAL__start": "lite-server",
-    "start_local": "ZILLO_API_KEY=X1-ZWz1fyvtuqp4i3_8nu8h node server.js",
-    "start": "ZILLO_API_KEY=X1-ZWz1fyvtuqp4i3_8nu8h node app.local.js",
-    "dev": "ZILLO_API_KEY=X1-ZWz1fyvtuqp4i3_8nu8h nodemon server.js",
-    "tsc": "tsc",
+    "start": "node app.local.js",
     "config": "node ./scripts/configure.js",
     "deconfig": "node ./scripts/deconfigure.js",
     "local": "node scripts/local",
@@ -54,7 +49,8 @@
     "win-deploy": "aws cloudformation deploy --template-file packaged-sam.yaml --stack-name %npm_package_config_cloudFormationStackName% --capabilities CAPABILITY_IAM --region %npm_package_config_region%",
     "win-package-deploy": "npm run win-package && npm run win-deploy",
     "win-delete-stack": "aws cloudformation delete-stack --stack-name %npm_package_config_cloudFormationStackName% --region %npm_package_config_region%",
-    "win-setup": "npm install && (aws s3api get-bucket-location --bucket %npm_package_config_s3BucketName% --region %npm_package_config_region% || npm run win-create-bucket) && npm run win-package-deploy"
+    "win-setup": "npm install && (aws s3api get-bucket-location --bucket %npm_package_config_s3BucketName% --region %npm_package_config_region% || npm run win-create-bucket) && npm run win-package-deploy",
+    "tsc": "tsc"
   },
   "name": "solx",
   "version": "1.0.0",

@@ -7,16 +7,22 @@ var axios = require("axios");
 var parseString = require("xml2js").parseString;
 
 const nearbyCities = require("nearby-big-cities");
-
+const ZILLO_API_KEY = "X1-ZWz1fyvtuqp4i3_8nu8h";
 var options = {
   promiseLib: promise // overriding the default (ES6 Promise);
 };
 var app = express();
 var pg = require("pg");
 var pgp = require("pg-promise")(options);
-
-var connectionString = "postgres://satish:mataji786@localhost:5432/powerlife";
-var db = pgp("postgres://satish:mataji786@localhost:5432/powerlife");
+//Connection String for local
+//var connectionString = "postgres://satish:mataji786@localhost:5432/powerlife";
+//Connection String for prod
+var connectionString =
+  "postgres://usr_powerlife:Aws938372828774!@powerlife-000.ct4rablogn9h.us-east-2.rds.amazonaws.com:5432/powerlife_000";
+var db = pgp(
+  "postgres://usr_powerlife:Aws938372828774!@powerlife-000.ct4rablogn9h.us-east-2.rds.amazonaws.com:5432/powerlife_000"
+);
+//var db = pgp("postgres://satish:mataji786@localhost:5432/powerlife");
 app.use(express.static("."));
 app.use(myParser.json());
 app.use(myParser.urlencoded({ extended: true }));
@@ -51,6 +57,10 @@ app.all("/*", function(req, res, next) {
 app.listen(3000, function () {
   console.log('App listening on port 3000!')
 })*/
+app.get("/test", function(req, res) {
+  console.log("TESTING THIS FUNCTIONALITY");
+  res.status(200).send("Hello there");
+});
 
 app.get("/", function(req, res, next) {
   pg.connect(connectionString, function(err, client, done) {
@@ -90,7 +100,6 @@ app.get("/customer", function(req, res, next) {
     );
   });
 });
-
 app.post("/register", function(req, res, next) {
   console.log("Params: ", req.body.firstName);
 
@@ -100,24 +109,53 @@ app.post("/register", function(req, res, next) {
       console.log("not able to get connection " + err);
       res.status(400).send(err);
     }
+    console.log("Hi getting connected");
     var createDate = new Date();
-    /*client.query('INSERT INTO ENTITYNAME(first_name,last_name, date_created, date_modified, user_created, user_modified) values($1,$2,$3,$4,$5,$6)',[req.body.firstName,req.body.lastName, createDate,createDate,1,1] , function(err,result) {
-           done(); // closing the connection;
-           if(err){
-               console.log(err);
-               res.status(400).send(err);
-           }
-           res.status(200).send(result);
-       });*/
+    client.query(
+      "INSERT INTO ENTITYNAME(first_name,last_name, email, phone_number,date_created, date_modified, user_created, user_modified) values($1,$2,$3,$4,$5,$6,$7,$8)",
+      [
+        req.body.firstName,
+        req.body.lastName,
+        req.body.email,
+        req.body.phoneNumber,
+        createDate,
+        createDate,
+        1,
+        1
+      ],
+      function(err, result) {
+        done(); // closing the connection;
+        if (err) {
+          console.log(err);
+          res.status(400).send(err);
+        }
+        res.status(200).send(req.body);
+      }
+    );
+  });
+});
+
+/*app.post("/register", function(req, res, next) {
+  console.log("Params: ", req.body.firstName);
+
+  //console.log("TEST",test.firstName);
+  pg.connect(connectionString, function(err, client, done) {
+    if (err) {
+      console.log("not able to get connection " + err);
+      res.status(400).send(err);
+    }
+    var createDate = new Date();
+
     db
       .tx(t1 => {
         return t1.batch([
           t1.one(
-            "INSERT INTO ENTITYNAME(first_name,last_name, email, date_created, date_modified, user_created, user_modified) values($1,$2,$3,$4,$5,$6,$7) returning *",
+            "INSERT INTO ENTITYNAME(first_name,last_name, email, phone_number,date_created, date_modified, user_created, user_modified) values($1,$2,$3,$4,$5,$6,$7,$8) returning *",
             [
               req.body.firstName,
               req.body.lastName,
               req.body.email,
+              req.body.phone,
               createDate,
               createDate,
               1,
@@ -150,11 +188,11 @@ app.post("/register", function(req, res, next) {
         console.log("ROWS", data[0].first_name);
         res.json(data[0]);
       })
-      /*.spread((entity, entityType) => {
+      //.spread((entity, entityType) => {
         // print new Entity id  and Entity Type  id;
         console.log('DATA:', entity.id, entityType.entity_type_id);
         res.json(entity)
-    })*/
+    })
       .catch(error => {
         console.log("ERROR:", error); // print the error;
       })
@@ -172,7 +210,7 @@ app.post("/register", function(req, res, next) {
       });
   });
 });
-
+*/
 app.get("/checkUser/:EMAIL", function(req, res, next) {
   console.log("EMAIL:", req.params.EMAIL);
   pg.connect(connectionString, function(err, client, done) {
@@ -293,8 +331,7 @@ app.get("/getPropertySquareFootage", function(req, res, next) {
 
   console.log({ address, cityzipstate });
   //URL to get the zpid and pass it to another Service
-  const url = `http://www.zillow.com/webservice/GetSearchResults.htm?zws-id=${process
-    .env.ZILLO_API_KEY}&address=${address}&citystatezip=${cityzipstate}`;
+  const url = `http://www.zillow.com/webservice/GetSearchResults.htm?zws-id=${ZILLO_API_KEY}&address=${address}&citystatezip=${cityzipstate}`;
 
   axios
     .get(url)
@@ -319,8 +356,7 @@ app.get("/getPropertySquareFootage", function(req, res, next) {
       });
     })
     .then(zpid => {
-      const url = `http://www.zillow.com/webservice/GetDeepComps.htm?zws-id=${process
-        .env.ZILLO_API_KEY}&zpid=${zpid}&count=5`;
+      const url = `http://www.zillow.com/webservice/GetDeepComps.htm?zws-id=${ZILLO_API_KEY}&zpid=${zpid}&count=5`;
 
       return new Promise((resolve, reject) => {
         axios.get(url).then(({ data }) => {
@@ -346,7 +382,7 @@ app.get("/getPropertySquareFootage", function(req, res, next) {
       });
     });
 });
-
-app.listen(4000, function() {
+module.exports = app;
+/*app.listen(4000, function() {
   console.log("Server is running.. on Port 4000");
-});
+});*/
