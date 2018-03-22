@@ -44,19 +44,40 @@ const groupBy = (name, array) => {
   });
 };
 
+/*
+// FROM WWW
+// http://johnzhang.io/options-request-in-express
+app.options("/*", function(req, res, next){
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With, X-Amz-Date, X-Api-Key');
+  res.send(200);
+});
+*/
+
+// SATISH ORIG
 app.all("/*", function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
     "Access-Control-Allow-Headers",
-    "Content-Type,accept,access_token,X-Requested-With"
+    "Content-Type,Content-Length,accept,access_token,X-Requested-With,X-Amz-Date,Authorization,X-Api-Key"
   );
   next();
 });
-/*app.use(express.static('.'))
 
+/*
+SATISH ORIG THIS BLOCK WAS COMMENTED AND NOT IN USE
+app.use(express.static('.'))
 app.listen(3000, function () {
   console.log('App listening on port 3000!')
-})*/
+})
+*/
+
+// URL:https://az00trufi6.execute-api.us-east-2.amazonaws.com/prod/register
+app.options("/register", function(req, res, next) {
+  res.send(200);
+});
+
 app.get("/test", function(req, res) {
   console.log("TESTING THIS FUNCTIONALITY");
   res.status(200).send("Hello there");
@@ -100,6 +121,7 @@ app.get("/customer", function(req, res, next) {
     );
   });
 });
+
 app.post("/register", function(req, res, next) {
   console.log("Params: ", req.body.firstName);
 
